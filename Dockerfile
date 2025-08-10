@@ -1,22 +1,38 @@
+# Use an official Python runtime as a parent image
 FROM python:3.10-slim
 
-# Install system dependencies
+# Install system dependencies for OCR and PDF processing
 RUN apt-get update && \
-    apt-get install -y poppler-utils tesseract-ocr && \
-    rm -rf /var/lib/apt/lists/*
+    apt-get install -y --no-install-recommends \
+        tesseract-ocr \
+        poppler-utils \
+        gcc \
+        libgl1 \
+        libglib2.0-0 \
+        && rm -rf /var/lib/apt/lists/*
 
-# Set workdir
-WORKDIR /app
+# (Optional) Show Tesseract version in build logs for debugging
+RUN tesseract --version
 
-# Copy requirements and install
+# Set work directory
+WORKDIR /opt/render/project/src
+
+# Copy requirements first for better Docker caching
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy app code
+# Install Python dependencies
+RUN pip install --upgrade pip && pip install -r requirements.txt
+
+# Copy the rest of your app code
 COPY . .
 
-# Expose port
-EXPOSE 8080
+# Expose the port your Flask app runs on
+EXPOSE 5000
 
-# Start the app
-CMD ["python", "app.py"]
+# Set environment variables for Flask
+ENV FLASK_APP=app.py
+ENV FLASK_RUN_HOST=0.0.0.0
+ENV FLASK_ENV=production
+
+# Run the Flask app
+CMD ["flask", "run"]
