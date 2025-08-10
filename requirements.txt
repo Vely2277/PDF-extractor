@@ -1,2 +1,4 @@
 Flask
 pdfminer.six
+pdf2image
+pytesseract
